@@ -226,6 +226,108 @@
 			}
         }
       }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "[concat('Consortium.', parameters('consortiumName'), '-', variables('members')[copyIndex()].name)]",
+      "apiVersion": "2015-01-01",
+      "copy": {
+        "name": "consortiumLoop",
+        "count": "[length(variables('members'))]"
+      },
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(variables('contentRootUrl'), '/template.consortiumMember.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "consortiumMemberName": {
+            "value": "[concat(parameters('consortiumName'), '-', variables('members')[copyIndex()].name)]"
+          },
+          "username": {
+            "value": "[parameters('username')]"
+          },
+          "sshPublicKey": {
+            "value": "[parameters('sshPublicKey')]"
+          },
+          "txGenesisJson": {
+            "value": "[parameters('genesisJson')]"
+          },
+          "minerGenesisJson": {
+            "value": "[variables('minerGenesisJson')]"
+          },
+          "gethNetworkId": {
+            "value": "[parameters('gethNetworkId')]"
+          },
+          "dashboardSecret": {
+            "value": "[parameters('dashboardSecret')]"
+          },
+          "dashboardIp": {
+            "value": "[reference('Consortium.Dashboard').outputs.ip.value]"
+          },
+          "registrarIp": {
+            "value": "[reference('Consortium.Dashboard').outputs.ip.value]"
+          },
+          "minerAddress": {
+            "value": "[variables('members')[copyIndex()].minerAddress]"
+          },
+          "sealerKey": {
+            "value": "[variables('members')[copyIndex()].sealerKey]"
+          },
+          "minerVMSku": {
+            "value": "[parameters('minerVMSku')]"
+          },
+          "minerCount": {
+            "value": "[variables('members')[copyIndex()].minerCount]"
+          },
+          "txnodeVMSku": {
+            "value": "[parameters('txnodeVMSku')]"
+          },
+          "txnodeCount": {
+            "value": "[variables('members')[copyIndex()].txNodeCount]"
+          },
+          "txNodeDockerImage":{
+            "value" :"[parameters('txNodeDockerImage')]"
+          },
+          "allowPublicRPC" : {
+            "value" : "[parameters('allowPublicRPC')]"
+          },
+          "minerNodeDockerImage":{
+            "value" :"[parameters('minerNodeDockerImage')]"
+          },
+          "locationOverride": {
+            "value": "[variables('members')[copyIndex()].location]"
+          },
+          "contentVersion" :{
+            "value" : "[parameters('contentVersion')]"
+          },
+          "contentRootOverride": {
+            "value": "[variables('contentRoot')]"
+          },
+          "configOms" : { 
+            "value":"[parameters('configOms')]"
+          },
+          "txNodeArguments" : {
+            "value" : "[parameters('txNodeArguments')]"
+          },
+          "minerNodeArguments" : {
+            "value" : "[parameters('minerNodeArguments')]"
+          },
+			"TransactionNodeSubnetRange": {
+				"value": "[parameters('TransactionNodeSubnetRange')]"
+			},
+			"MinerNodeSubnetRange": {
+				"value": "[parameters('MinerNodeSubnetRange')]"
+			},
+			"memberNetworkaddressPrefix": {
+				"value": "[parameters('memberNetworkaddressPrefix')]"
+			}
+        }
+      },
+      "dependsOn": [
+        "Consortium.Dashboard"
+      ]
     }
   ],
   "outputs": {

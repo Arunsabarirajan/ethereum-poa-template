@@ -1,0 +1,120 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "commands": {
+            "type": "array",
+            "defaultValue": []
+        },
+        "nsgRules": {
+            "type": "array",
+            "defaultValue": []
+        },
+        "exports": {
+            "type": "array",
+            "defaultValue": []
+        },
+        "ruleSeed": {
+            "type": "int",
+            "defaultValue": 100
+        },
+        "data": {
+            "type": "object",
+            "defaultValue": {
+                "dockerImage": "ethereumex/eth-stats-dashboard:latest"
+            }
+        },
+        "parentName": {
+            "type": "string"
+        },
+        "contentRoot": {
+            "type": "string"
+        },
+        "internalExports": {
+            "type": "array",
+            "defaultValue": []
+        }
+    },
+    "variables": {
+        "internalExports": [],
+        "nsgRules": [
+            {
+                "name": "allow-dashboard",
+                "properties": {
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "3000",
+                    "sourceAddressPrefix": "Internet",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": "[add(parameters('ruleSeed'), 1)]",
+                    "direction": "Inbound"
+                }
+            },
+            {
+                "name": "allow-registrar",
+                "properties": {
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "3001",
+                    "sourceAddressPrefix": "Internet",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": "[add(parameters('ruleSeed'), 2)]",
+                    "direction": "Inbound"
+                }
+            }
+        ],
+        "exports": [
+            {
+                "Name": "Dashboard",
+                "Source": 3000,
+                "Destination": 3000,
+                "Protocol": "TCP"
+            },
+            {
+                "Name": "Registrar",
+                "Source": 3001,
+                "Destination": 3001,
+                "Protocol": "TCP"
+            }
+        ],
+        "localDocker": "/root/docker-compose.yaml",
+        "dockerFile": "[concat(parameters('contentRoot'), '/ethStats.compose.yaml')]",
+        "curl": "curl -S -s --connect-timeout 5 --retry 15",
+        "commands": [
+            
+            {
+                "name": "DownloadCompose",
+                "command": "[concat(variables('curl'), ' -o ', variables('localDocker'), ' ', variables('dockerFile'))]"
+            },
+            {
+                "name": "Remove prior configuration",
+                "command": "[concat('docker-compose -f ', variables('localDocker'), ' down')]",
+                "environment": {
+                    "DOCKER_IMAGE": "[parameters('data').dockerImage]"
+                }
+            },
+            {
+                "name": "ComposeDashboard",
+                "command": "[concat('docker-compose -f ', variables('localDocker'), ' up -d')]",
+                "environment": {
+                    "DOCKER_IMAGE": "[parameters('data').dockerImage]"
+                }
+            }
+        ]
+    },
+    "resources": [],
+    "outputs": {
+        "Result": {
+            "type": "object",
+            "value": {
+                "Commands": "[concat(parameters('commands'), variables('commands'))]",
+                "NsgRules": "[concat(parameters('nsgRules'), variables('nsgRules'))]",
+                "Exports": "[concat(parameters('exports'), variables('exports'))]",
+                "InternalExports": "[concat(parameters('internalExports'), variables('internalExports'))]",
+                "RuleSeed": "[add(parameters('ruleSeed'), length(variables('nsgRules')))]"
+            }
+        }
+    }
+}

@@ -1,0 +1,259 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dashboardName": {
+      "type": "string",
+      "maxLength": 25,
+      "metadata": {
+        "description": "A short identifier to distinguish machines in this membership"
+      }
+    },
+    "username": {
+      "type": "string",
+      "defaultValue": "azureuser",
+      "metadata": {
+        "description": "Admin username on all VMs."
+      }
+    },
+    "sshPublicKey": {
+      "type": "string",
+      "metadata": {
+        "description": "ssh public key for connecting to VMs."
+      }
+    },
+    "dashboardSecret": {
+      "type": "securestring",
+      "metadata": {
+        "description": "A unique string to used to ensure only machines with the secret can post to the dashboard"
+      }
+    },
+    "vmSku": {
+      "defaultValue": "Standard_DS1_v2",
+      "type": "string"
+    },
+    "additionalCommands": {
+      "defaultValue": {
+        "Commands": []
+      },
+      "type": "secureObject"
+    },
+    "dockerImage": {
+      "defaultValue": "ethereumex/eth-stats-dashboard:latest",
+      "type": "string",
+      "metadata": {
+        "description": "The tag of the docker image to download"
+      }
+    },
+    "contentVersion": {
+      "defaultValue": "Release-v4.0.2",
+      "type": "string",
+      "metadata": {
+        "description": "The version of the templates to use. This refers to a git branch. This parameter is ignored if contentRootOverride is provided"
+      }
+    },
+    "contentRootOverride": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "Url location of root templates"
+      }
+    },
+    "locationOverride": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Location to deploy resources. By default the template will use the Resource Group location"
+      }
+    },
+	"dashBoardSubnetRange": {
+		"defaultValue": "",
+		"type": "string"
+	},
+	"dashBoardNetworkaddressPrefix": {
+		"defaultValue": "",
+		"type": "string"
+	}	
+  },
+  "variables": {
+    "utilityContentVersion" : "master",
+    "utilityContentRoot": "[concat('https://raw.githubusercontent.com/Arunsabarirajan/ethereum-poa-template/', parameters('contentVersion'), '/utilities')]",
+    "contentRootUrl": "[concat('https://raw.githubusercontent.com/Arunsabarirajan/ethereum-poa-template/', parameters('contentVersion'), '/ethereum-consortium')]",
+    "contentRoots": [
+      "[variables('contentRootUrl')]",
+      "[parameters('contentRootOverride')]"
+    ],
+    "contentRoot": "[variables('contentRoots')[length(take(parameters('contentRootOverride'),1))]]",
+    "resourceLocations": [
+      "[resourceGroup().location]",
+      "[parameters('locationOverride')]"
+    ],
+    "resourceLocation": "[tolower(variables('resourceLocations')[length(take(parameters('locationOverride'),1))])]",
+    "namingInfix": "[toLower(parameters('dashboardName'))]",
+    "rootName": "[concat('Consortium.', parameters('dashboardName'))]",
+    "dNetworkName": "[concat(variables('rootName'), '.Network')]",
+    "dVMSSDashboard": "[concat(variables('rootName'), '.VMSSCommands')]",
+    "initCommands": [
+      {
+        "name": "secrets",
+        "globalEnvironment": {
+          "WS_SECRET": "[parameters('dashboardSecret')]"
+        }
+      }
+    ],
+    "extensionName": "[concat(variables('rootName'), '.Extensions')]",
+    "extensions": [
+      {
+        "name": "EthStats-Dashboard",
+        "extension": "ethStats.dashboard.json",
+        "data": {
+          "dockerImage": "[parameters('dockerImage')]"
+        }
+      }
+    ],
+    "defaultSecurityRules": [
+      {
+        "name": "allow-ssh",
+        "properties": {
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "22",
+          "sourceAddressPrefix": "Internet",
+          "destinationAddressPrefix": "*",
+          "access": "Allow",
+          "priority": 100,
+          "direction": "Inbound"
+        }
+      }
+    ]
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "[variables('extensionName')]",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(variables('utilityContentRoot'), '/template.extensions.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "rootName": {
+            "value": "[variables('extensionName')]"
+          },
+          "contentRoot": {
+            "value": "[variables('utilityContentRoot')]"
+          },
+          "extensionsRoot": {
+            "value": "[concat(variables('contentRoot'), '/extensions')]"
+          },
+          "extensions": {
+            "value": "[variables('extensions')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "[variables('dNetworkName')]",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(variables('utilityContentRoot'), '/template.network.loadBalanced.switch.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[variables('resourceLocation')]"
+          },
+          "namingInfix": {
+            "value": "[variables('namingInfix')]"
+          },
+          "subnets": {
+            "value": [
+              {
+                "name": "default",
+                "prefix": "[parameters('dashBoardSubnetRange')]",
+                "rules": "[concat(variables('defaultSecurityRules'), reference(variables('extensionName')).outputs.result.value.nsgRules)]"
+              }
+            ]
+          },
+          "exportRules": {
+            "value": "[reference(variables('extensionName')).outputs.result.value.exports]"
+          },
+          "contentRoot": {
+            "value": "[variables('utilityContentRoot')]"
+          },
+          "networkaddressPrefix": {
+            "value": "[parameters('dashBoardNetworkaddressPrefix')]"
+          }
+        }
+      },
+      "dependsOn": [
+        "[variables('extensionName')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "[variables('dVMSSDashboard')]",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(variables('utilityContentRoot'), '/template.vmss.commands.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[variables('resourceLocation')]"
+          },
+          "contentRoot": {
+            "value": "[variables('utilityContentRoot')]"
+          },
+          "vmssName": {
+            "value": "[concat(variables('namingInfix'), '-n')]"
+          },
+          "vmSku": {
+            "value": "[parameters('vmSku')]"
+          },
+          "image": {
+            "value": "Ubuntu16.04.0-LTS"
+          },
+          "instanceCount": {
+            "value": 1
+          },
+          "username": {
+            "value": "[parameters('username')]"
+          },
+          "sshPublicKey": {
+            "value": "[parameters('sshPublicKey')]"
+          },
+          "commandsJson": {
+            "value": {
+              "Commands": "[concat(variables('initCommands'), reference(variables('extensionName')).outputs.result.value.commands)]"
+            }
+          },
+          "networkConfiguration": {
+            "value": {
+              "subnet": {
+                "id": "[reference(variables('dNetworkName')).outputs.network.value.subnets[0].id]"
+              },
+              "loadBalancerBackendAddressPools": "[reference(variables('dNetworkName')).outputs.network.value.backendPools]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[variables('dNetworkName')]"
+      ]
+    }
+  ],
+  "outputs": {
+    "ip": {
+      "type": "string",
+      "value": "[reference(variables('dNetworkName')).outputs.network.value.ip]"
+    }
+  }
+}

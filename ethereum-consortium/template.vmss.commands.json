@@ -1,0 +1,144 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "location of resources"
+      }
+    },
+    "vmSku": {
+      "defaultValue": "Standard_D1_v2",
+      "type": "string",
+      "metadata": {
+        "description": "Size of VMs in the VM Scale Set."
+      }
+    },
+    "image": {
+      "type": "string",
+      "metadata": {
+        "description": "The os disk image for the VMs in the scale set."
+      }
+    },
+    "vmssName": {
+      "maxLength": 61,
+      "type": "string",
+      "metadata": {
+        "description": "String used as a base for naming resources. Must be 3-61 characters in length and globally unique across Azure. A hash is prepended to this string for some resources, and resource-specific information is appended."
+      }
+    },
+    "instanceCount": {
+      "type": "int",
+      "metadata": {
+        "description": "Number of VM instances (100 or less)."
+      }
+    },
+    "username": {
+      "type": "string",
+      "metadata": {
+        "description": "Admin username on all VMs."
+      }
+    },
+    "sshPublicKey": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "ssh public key for connecting to VMs."
+      }
+    },
+    "dataDiskSizeGB" : {
+      "type" : "int",
+      "defaultValue": 100,
+      "minValue": 1,
+      "metadata": {
+        "description" : "One data disk will be added automatically with this size."
+      }
+    },
+    "networkConfiguration": {
+      "type": "object"
+    },
+    "commandsJson": {
+      "type": "secureObject",
+      "defaultValue": {
+        "Commands": []
+      }
+    },
+    "contentRoot": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "resourceLocation": "[parameters('location')]",
+    "curl": "curl -S -s --connect-timeout 5 --retry 15",
+    "autoPartUrl": "[concat(parameters('contentRoot'), '/initScripts/autopart.sh')]",
+    "localAutoPart": "/root/autopart.sh",
+    "scriptName": "runScripts.sh",
+    "machineSetupScriptUri": "[concat(parameters('contentRoot'), '/', variables('scriptName'))]",
+    "autoPartCommands": [
+      {
+        "name": "Download autopart.sh",
+        "command": "[concat(variables('curl'), ' -o ', variables('localAutoPart'), ' ', variables('autoPartUrl'))]"
+      },
+      {
+        "name": "chmod autopart.sh",
+        "command": "[concat('chmod 0755 ', variables('localAutoPart'))]"
+      },
+      {
+        "name": "execute autopart.sh",
+        "command": "[variables('localAutoPart')]"
+      }
+    ],
+    "commands": "[concat(variables('autoPartCommands'), parameters('commandsJson').Commands)]",
+    "scriptCommand": "[concat('sh ', variables('scriptName'), ' ', parameters('contentRoot'), ' ', base64(string(variables('commands'))))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "[concat('ConsoritumNode.', parameters('vmssName'), '.VMSS')]",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(parameters('contentRoot'), '/template.vmss.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[variables('resourceLocation')]"
+          },
+          "vmssName": {
+            "value": "[parameters('vmssName')]"
+          },
+          "vmSku": {
+            "value": "[parameters('vmSku')]"
+          },
+          "image": {
+            "value": "[parameters('image')]"
+          },
+          "instanceCount": {
+            "value": "[parameters('instanceCount')]"
+          },
+          "username": {
+            "value": "[parameters('username')]"
+          },
+          "sshPublicKey": {
+            "value": "[parameters('sshPublicKey')]"
+          },
+          "scriptUri": {
+            "value": "[variables('machineSetupScriptUri')]"
+          },
+          "scriptCommand": {
+            "value": "[variables('scriptCommand')]"
+          },
+          "networkConfiguration": {
+            "value": "[parameters('networkConfiguration')]"
+          },
+          "dataDiskSizeGB" : {
+            "value": "[parameters('dataDiskSizeGB')]"
+          }
+        }
+      }
+    }
+  ]
+}

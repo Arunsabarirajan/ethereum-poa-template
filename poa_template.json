@@ -124,13 +124,11 @@
     },
     "variables": {
         "contentVersions": [
-            "Release-v4.0.2",
+            "master",
             "[parameters('contentVersionOverride')]"
         ],
         "contentVersion": "[variables('contentVersions')[length(take(parameters('contentVersionOverride'),1))]]",
-        "contentRootUrl": "https://raw.githubusercontent.com/Arunsabarirajan/etherum-poa-template/master",
-
-        "contentRootUrl": "[concat('https://raw.githubusercontent.com/EthereumEx/ethereum-arm-templates/', variables('contentVersion'), '/ethereum-consortium')]",
+        "contentRootUrl": "[concat('https://raw.githubusercontent.com/Arunsabarirajan/ethereum-poa-template/', variables('contentVersion'), '/ethereum-consortium')]",
         "contentRoots": [
             "[variables('contentRootUrl')]",
             "[parameters('contentRootOverride')]"

@@ -1,0 +1,511 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "consortiumMemberName": {
+      "type": "string",
+      "maxLength": 25,
+      "metadata": {
+        "description": "A short identifier to distinguish machines in this membership"
+      }
+    },
+    "username": {
+      "type": "string",
+      "defaultValue": "azureuser",
+      "metadata": {
+        "description": "Admin username on all VMs."
+      }
+    },
+    "sshPublicKey": {
+      "type": "string",
+      "metadata": {
+        "description": "ssh public key for connecting to VMs."
+      }
+    },
+    "txGenesisJson": {
+      "type": "secureObject",
+      "metadata": {
+        "description": "A url used to download the JSON which describes the genesis block"
+      }
+    },
+    "minerGenesisJson": {
+      "type": "secureObject",
+      "metadata": {
+        "description": "A url used to download the JSON which describes the genesis block"
+      }
+    },
+    "gethNetworkId": {
+      "type": "securestring",
+      "metadata": {
+        "description": "A unique id used to ensure only machines on the same network can talk to each other"
+      }
+    },
+    "dashboardSecret": {
+      "type": "securestring",
+      "metadata": {
+        "description": "A unique string to used to ensure only machines with the secret can post to the dashboard"
+      }
+    },
+    "dashboardIp": {
+      "type": "string"
+    },
+    "registrarIp": {
+      "type": "string"
+    },
+    "minerAddress": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "If miners is more than 0, then an address must be specified"
+      }
+    },
+    "sealerKey" : {
+      "type" : "securestring",
+      "defaultValue": ""
+    },
+    "configOms": {
+      "type": "secureObject",
+      "defaultValue": {},
+      "metadata": {
+        "description": "If this value is defined then an OMS agent will be deployed to the machine. { KEY : \"\", WSID :\"\" }"
+      }
+    },
+    "minerVMSku": {
+      "defaultValue": "Standard_DS2_v2",
+      "type": "string",
+      "allowedValues": [
+        "Standard_DS1_v2",
+        "Standard_DS2_v2",
+        "Standard_DS3_v2",
+        "Standard_DS4_v2",
+        "Standard_DS5_v2",
+        "Standard_DS11_v2",
+        "Standard_DS12_v2",
+        "Standard_DS13_v2",
+        "Standard_DS14_v2",
+        "Standard_DS15_v2",
+        "Standard_GS1",
+        "Standard_GS2",
+        "Standard_GS3",
+        "Standard_GS4",
+        "Standard_GS5",
+		"Standard_D2s_v3"
+      ]
+    },
+    "minerCount": {
+      "defaultValue": 2,
+      "type": "int"
+    },
+    "txnodeVMSku": {
+      "defaultValue": "Standard_DS1_v2",
+      "type": "string"
+    },
+    "txnodeCount": {
+      "defaultValue": 3,
+      "type": "int"
+    },
+    "txNodeDockerImage": {
+      "defaultValue": "ethereumex/geth-node:latest-alpine",
+      "type": "string",
+      "metadata": {
+        "description": "The tag of the docker image to download"
+      }
+    },
+    "txNodeArguments" : {
+      "type" : "string",
+      "defaultValue": ""
+    },
+    "allowPublicRPC": {
+      "defaultValue": "false",
+      "type": "string",
+      "allowedValues": [
+        "true",
+        "false"
+      ],
+      "metadata": {
+        "description": "A flag used to determine if RPC should be enabled for public access"
+      }
+    },
+    "minerNodeDockerImage": {
+      "defaultValue": "ethereumex/geth-node:latest-alpine",
+      "type": "string",
+      "metadata": {
+        "description": "The tag of the docker image to download"
+      }
+    },
+    "minerNodeArguments" : {
+      "type" : "string",
+      "defaultValue": ""
+    },
+    "contentVersion": {
+      "defaultValue": "Release-v4.0.2",
+      "type": "string",
+      "metadata": {
+        "description": "The version of the templates to use. This refers to a git branch. This parameter is ignored if contentRootOverride is provided"
+      }
+    },
+    "contentRootOverride": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "Url location of root templates"
+      }
+    },
+    "locationOverride": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Location to deploy resources. By default the template will use the Resource Group location"
+      }
+    },
+	"TransactionNodeSubnetRange": {
+		"defaultValue": "",
+		"type": "string"
+	},
+	"MinerNodeSubnetRange": {
+		"defaultValue": "",
+		"type": "string"
+	},
+	"memberNetworkaddressPrefix": {
+		"defaultValue": "",
+		"type": "string"
+	}
+  },
+  "variables": {
+    "utilityContentVersion" : "Release-v2.0.0",
+    "utilityContentRoot": "[concat('https://raw.githubusercontent.com/Arunsabarirajan/arm-template-utilities/', variables('utilityContentVersion'))]",
+    "utilityContentRootUrlModified": "https://raw.githubusercontent.com/Arunsabarirajan/blocktemplate/master",
+	"contentRootUrl": "[concat('https://raw.githubusercontent.com/Arunsabarirajan/ethereum-arm-templates/', parameters('contentVersion'), '/ethereum-consortium')]",
+    "contentRoots": [
+      "[variables('contentRootUrl')]",
+      "[parameters('contentRootOverride')]"
+    ],
+    "contentRoot": "[variables('contentRoots')[length(take(parameters('contentRootOverride'),1))]]",
+    "resourceLocations": [
+      "[resourceGroup().location]",
+      "[parameters('locationOverride')]"
+    ],
+    "resourceLocation": "[tolower(variables('resourceLocations')[length(take(parameters('locationOverride'),1))])]",
+    "namingInfix": "[toLower(parameters('consortiumMemberName'))]",
+    "rootName": "[concat('Consortium.', parameters('consortiumMemberName'))]",
+    "dNetworkName": "[concat(variables('rootName'), '.LoadBalancedNetwork')]",
+    "dVMSSTx": "[concat(variables('rootName'), '.Tx.Nodes')]",
+    "dVMSSMiners": "[concat(variables('rootName'), '.Miners.Nodes')]",
+    "dMinerProperties": "[concat(variables('rootName'), '.MinerProperties')]",
+    "txGenesis": "[base64(string(parameters('txGenesisJson')))]",
+    "minerGenesis": "[base64(string(parameters('minerGenesisJson')))]",
+    "bootNodeUrl": "[concat('http://', parameters('registrarIp'), ':3001')]",
+    "wsServer": "[concat('ws://', parameters('dashboardIp'), ':3000')]",
+    "omsCommands": [
+      [],
+      [
+        {
+          "name": "oms-agent",
+          "image": "microsoft/oms",
+          "ports": [
+            {
+              "port": 25225,
+              "protocol": "tcp"
+            }
+          ],
+          "environment": "[parameters('configOms')]",
+          "arguments": [
+            "--privileged -v /var/run/docker.sock:/var/run/docker.sock -d --restart=always"
+          ]
+        }
+      ]
+    ],
+    "omsCommand": {
+      "Commands": "[variables('omsCommands')[length(take(skip(string(parameters('configOms')),3),1))]]"
+    },
+    "txExtensionName": "[concat(variables('rootName'), '.Tx.Extensions')]",
+    "txExtensions": [
+      {
+        "name": "GoEthereum-Tx",
+        "extension": "goEthereum.txNode.json",
+        "data": {
+          "dockerImage": "[parameters('txNodeDockerImage')]",
+          "allowPublicRPC" : "[parameters('allowPublicRPC')]",
+          "arguments" : []
+        }
+      }
+    ],
+    "minerExtensionName": "[concat(variables('rootName'), '.Miner.Extensions')]",
+    "minerExtensions": [
+      {
+        "name": "GoEthereum-Miner",
+        "extension": "goEthereum.minerNode.json",
+        "data": {
+          "dockerImage": "[parameters('minerNodeDockerImage')]",
+          "arguments": [
+           ]
+        }
+      }
+    ]
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "[variables('txExtensionName')]",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(variables('utilityContentRoot'), '/template.extensions.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "rootName": {
+            "value": "[variables('txExtensionName')]"
+          },
+          "contentRoot": {
+            "value": "[variables('utilityContentRoot')]"
+          },
+          "extensionsRoot": {
+            "value": "[concat(variables('contentRoot'), '/extensions')]"
+          },
+          "extensions": {
+            "value": "[variables('txExtensions')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "[variables('minerExtensionName')]",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(variables('utilityContentRoot'), '/template.extensions.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "rootName": {
+            "value": "[variables('minerExtensionName')]"
+          },
+          "contentRoot": {
+            "value": "[variables('utilityContentRoot')]"
+          },
+          "extensionsRoot": {
+            "value": "[concat(variables('contentRoot'), '/extensions')]"
+          },
+          "extensions": {
+            "value": "[variables('minerExtensions')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "[variables('dNetworkName')]",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(variables('utilityContentRootUrlModified'), '/template.network.loadBalanced.switch.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[variables('resourceLocation')]"
+          },
+          "namingInfix": {
+            "value": "[variables('namingInfix')]"
+          },
+          "subnets": {
+            "value": [
+              {
+                "name": "txs",
+                "prefix": "[parameters('TransactionNodeSubnetRange')]",
+                "rules": "[reference(variables('txExtensionName')).outputs.result.value.nsgRules]"
+              },
+              {
+                "name": "miners",
+                "prefix": "[parameters('MinerNodeSubnetRange')]",
+                "rules": "[reference(variables('minerExtensionName')).outputs.result.value.nsgRules]"
+              }
+            ]
+          },
+          "exportRules": {
+            "value": "[concat(reference(variables('minerExtensionName')).outputs.result.value.exports, reference(variables('txExtensionName')).outputs.result.value.exports)]"
+          },
+          "internalExportRules": {
+            "value": "[concat(reference(variables('minerExtensionName')).outputs.result.value.internalExports, reference(variables('txExtensionName')).outputs.result.value.internalExports)]"
+          },
+          "contentRoot": {
+            "value": "[variables('utilityContentRoot')]"
+          },
+          "networkaddressPrefix": {
+            "value": "[parameters('memberNetworkaddressPrefix')]"
+          }
+        }
+      },
+      "dependsOn": [
+        "[variables('txExtensionName')]",
+        "[variables('minerExtensionName')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "[variables('dMinerProperties')]",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(variables('utilityContentRootUrlModified'), '/template.vmProperties.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "VM": {
+            "value": "[parameters('minerVMSku')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "[variables('dVMSSTx')]",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(variables('contentRoot'), '/template.memberNode.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[variables('resourceLocation')]"
+          },
+          "contentRoot": {
+            "value": "[variables('contentRoot')]"
+          },
+          "vmssName": {
+            "value": "[concat(variables('namingInfix'), '-n-tx')]"
+          },
+          "vmSku": {
+            "value": "[parameters('txnodeVMSku')]"
+          },
+          "image": {
+            "value": "Ubuntu16.04.0-LTS"
+          },
+          "instanceCount": {
+            "value": "[parameters('txnodeCount')]"
+          },
+          "username": {
+            "value": "[parameters('username')]"
+          },
+          "sshPublicKey": {
+            "value": "[parameters('sshPublicKey')]"
+          },
+          "configuration": {
+            "value": {
+              "globalEnvironment": {
+                "USERNAME" : "[parameters('username')]",
+                "GENESIS_CONTENT": "[variables('txGenesis')]",
+                "NETWORK_ID": "[parameters('gethNetworkId')]",
+                "WS_SERVER": "[variables('wsServer')]",
+                "WS_SECRET": "[parameters('dashboardSecret')]",
+                "BOOTNODE_URL": "[variables('bootNodeUrl')]",
+                "BOOTNODE_NETWORK": "[substring(uniqueString(reference(variables('dNetworkName')).outputs.network.value.id),0,10)]",
+                "BOOTNODE_PUBLIC_IP": "[reference(variables('dNetworkName')).outputs.network.value.ip]",
+                "EXTERNAL_ARGS" : "[parameters('txNodeArguments')]"
+              },
+              "commands": "[concat(reference(variables('txExtensionName')).outputs.result.value.commands, variables('omsCommand').Commands)]"
+            }
+          },
+          "networkConfiguration": {
+            "value": {
+              "subnet": {
+                "id": "[reference(variables('dNetworkName')).outputs.network.value.subnets[0].id]"
+              },
+              "loadBalancerBackendAddressPools": "[reference(variables('dNetworkName')).outputs.network.value.backendPools]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[variables('dNetworkName')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "[variables('dVMSSMiners')]",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(variables('contentRoot'), '/template.memberNode.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[variables('resourceLocation')]"
+          },
+          "contentRoot": {
+            "value": "[variables('contentRoot')]"
+          },
+          "vmssName": {
+            "value": "[concat(variables('namingInfix'), '-n-miner')]"
+          },
+          "vmSku": {
+            "value": "[parameters('minerVMSku')]"
+          },
+          "image": {
+            "value": "Ubuntu16.04.0-LTS"
+          },
+          "instanceCount": {
+            "value": "[parameters('minerCount')]"
+          },
+          "username": {
+            "value": "[parameters('username')]"
+          },
+          "sshPublicKey": {
+            "value": "[parameters('sshPublicKey')]"
+          },
+          "configuration": {
+            "value": {
+              "globalEnvironment": {
+                "USERNAME" : "[parameters('username')]",
+                "GENESIS_CONTENT": "[variables('minerGenesis')]",
+                "NETWORK_ID": "[parameters('gethNetworkId')]",
+                "WS_SERVER": "[variables('wsServer')]",
+                "WS_SECRET": "[parameters('dashboardSecret')]",
+                "BOOTNODE_URL": "[variables('bootNodeUrl')]",
+                "BOOTNODE_NETWORK": "[substring(uniqueString(reference(variables('dNetworkName')).outputs.network.value.id),0,10)]",
+                "BOOTNODE_PUBLIC_IP": "[reference(variables('dNetworkName')).outputs.network.value.ip]",
+                "ENABLE_MINER" : "1",
+                "SEALER_KEY" : "[parameters('sealerKey')]",
+                "MINER_ADDRESS" : "[parameters('minerAddress')]",
+                "MINER_THREADS" : "[string(reference(variables('dMinerProperties')).outputs.result.value.cores)]",
+                "EXTERNAL_ARGS" : "[parameters('minerNodeArguments')]"                
+              },
+              "commands": "[concat(reference(variables('minerExtensionName')).outputs.result.value.commands, variables('omsCommand').Commands)]"
+            }
+          },
+          "networkConfiguration": {
+            "value": {
+              "subnet": {
+                "id": "[reference(variables('dNetworkName')).outputs.network.value.subnets[1].id]"
+              }
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[variables('dNetworkName')]",
+        "[variables('dVMSSTx')]",
+        "[variables('dMinerProperties')]"
+      ]
+    }
+  ],
+  "outputs": {
+    "Member": {
+      "type": "object",
+      "value": {
+        "ip": "[reference(variables('dNetworkName')).outputs.network.value.ip]",
+        "network": "[reference(variables('dNetworkName')).outputs.network.value]"
+      }
+    }
+  }
+}
