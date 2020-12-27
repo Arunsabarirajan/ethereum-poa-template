@@ -1,0 +1,122 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "location of resources"
+      }
+    },
+    "subnets": {
+      "type": "array",
+      "defaultValue": []
+    },
+    "exportRules": {
+      "type": "array",
+      "defaultValue": []
+    },
+    "internalExportRules": {
+      "type": "array"
+    },
+    "namingInfix": {
+      "type": "string"
+    },
+    "contentRoot": {
+      "type": "string"
+    },
+	"networkaddressPrefix": {
+      "type": "string",
+      "defaultValue": ""
+    }
+  },
+  "variables": {
+    "resourceLocation": "[parameters('location')]",
+    "contentRoot": "[parameters('contentRoot')]",
+    "namingInfix": "[parameters('namingInfix')]",
+    "networkName": "[concat(variables('namingInfix'), '.Network.Template')]",
+    "internalLoadBalancerTemplate": "[concat(variables('namingInfix'), '-ilb-t')]",
+	"utilityContentRootUrlModified": "https://raw.githubusercontent.com/Arunsabarirajan/blocktemplate/master"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "[variables('networkName')]",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(variables('utilityContentRootUrlModified'), '/template.network.loadBalanced.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "subnets": {
+            "value": "[parameters('subnets')]"
+          },
+          "exportRules": {
+            "value": "[parameters('exportRules')]"
+          },
+          "namingInfix": {
+            "value": "[parameters('namingInfix')]"
+          },
+          "contentRoot": {
+            "value": "[parameters('contentRoot')]"
+          },
+          "networkaddressPrefix": {
+            "value": "[parameters('networkaddressPrefix')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "[variables('internalLoadBalancerTemplate')]",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(parameters('contentRoot'), '/template.network.loadBalancer.internal.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "namingInfix": {
+            "value": "[variables('namingInfix')]"
+          },
+          "location": {
+            "value": "[variables('resourceLocation')]"
+          },
+          "rules": {
+            "value": "[parameters('internalExportRules')]"
+          },
+          "subnetId": {
+            "value": "[reference(variables('networkName')).outputs.Network.value.subnets[0].id]"
+          },
+          "contentRoot": {
+            "value": "[variables('contentRoot')]"
+          }
+        }
+      },
+      "dependsOn": [
+        "[variables('networkName')]"
+      ]
+    }
+  ],
+  "outputs": {
+    "Network": {
+      "type": "object",
+      "value": {
+        "id": "[reference(variables('networkName')).outputs.Network.value.id]",
+        "ip": "[reference(variables('networkName')).outputs.Network.value.ip]",
+        "backendPools": "[concat(reference(variables('networkName')).outputs.Network.value.backendPools,reference(variables('internalLoadBalancerTemplate')).outputs.loadBalancer.value.backendPools)]",
+        "subnets": "[reference(variables('networkName')).outputs.Network.value.subnets]"
+      }
+    },
+    "IlbPool2" : {
+      "type" : "object",
+      "value" : "[reference(variables('internalLoadBalancerTemplate')).outputs.loadBalancer.value.backendPools]"
+    }
+  }
+}

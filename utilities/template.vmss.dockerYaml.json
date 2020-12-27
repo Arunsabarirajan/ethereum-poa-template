@@ -1,0 +1,201 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "prefix": {
+        "type": "string"
+      },
+      "username": {
+        "type": "string",
+        "defaultValue": "azureuser",
+        "metadata": {
+          "description": "Admin username on all VMs."
+        }
+      },
+      "sshPublicKey": {
+        "type": "string",
+        "metadata": {
+          "description": "ssh public key for connecting to VMs."
+        }
+      },
+      "arguments": {
+        "type": "secureObject"
+      },
+      "dockerComposeYamlUrl": {
+        "type": "string"
+      },
+      "ports": {
+        "type": "array",
+        "defaultValue": []
+      },
+      "instanceCount" :{
+          "defaultValue": 1,
+          "type": "int"
+      },
+      "vmSku": {
+        "defaultValue": "Standard_DS1_v2",
+        "type": "string",
+        "allowedValues": [
+          "Standard_DS1_v2",
+          "Standard_DS2_v2",
+          "Standard_DS3_v2",
+          "Standard_DS4_v2",
+          "Standard_DS5_v2",
+          "Standard_DS11_v2",
+          "Standard_DS12_v2",
+          "Standard_DS13_v2",
+          "Standard_DS14_v2",
+          "Standard_DS15_v2",
+          "Standard_GS1",
+          "Standard_GS2",
+          "Standard_GS3",
+          "Standard_GS4",
+          "Standard_GS5"
+        ]
+      }
+    },
+    "variables": {
+      "utilityContentVersion": "Release-v2.0.0",
+      "utilityContentRoot": "[concat('https://raw.githubusercontent.com/EthereumEx/arm-template-utilities/', variables('utilityContentVersion'))]",
+      "resourceLocation": "[resourceGroup().location]",
+      "rootName": "[toLower(parameters('prefix'))]",
+      "networkTemplateName": "[concat(variables('rootName'), '.Network.Root')]",
+      "vmssTemplateName": "[concat(variables('rootName'), '.VMSSCommands')]",
+      "initCommands": [
+        {
+          "name": "Globals Environment",
+          "globalEnvironment": "[parameters('arguments')]"
+        }
+      ],
+      "defaultSecurityRules": [
+        {
+          "name": "allow-ssh",
+          "properties": {
+            "protocol": "Tcp",
+            "sourcePortRange": "*",
+            "destinationPortRange": "22",
+            "sourceAddressPrefix": "Internet",
+            "destinationAddressPrefix": "*",
+            "access": "Allow",
+            "priority": 100,
+            "direction": "Inbound"
+          }
+        }
+      ],
+      "calculatedSecurityRules": [],
+      "localDocker": "/root/docker-compose.yaml",
+      "dockerFile": "[parameters('dockerComposeYamlUrl')]",
+      "curl": "curl -S -s --connect-timeout 5 --retry 15",
+      "commands": [
+        {
+          "name": "Download docker compose",
+          "command": "[concat(variables('curl'), ' -o ', variables('localDocker'), ' ', variables('dockerFile'))]"
+        },
+        {
+          "name": "Remove prior configuration",
+          "command": "[concat('docker-compose -f ', variables('localDocker'), ' down')]"
+        },
+        {
+          "name": "Docker compose up",
+          "command": "[concat('docker-compose -f ', variables('localDocker'), ' up -d')]"
+        }
+      ]
+    },
+    "resources": [
+      {
+        "type": "Microsoft.Resources/deployments",
+        "name": "[variables('networkTemplateName')]",
+        "apiVersion": "2015-01-01",
+        "properties": {
+          "templateLink": {
+            "contentVersion": "1.0.0.0",
+            "uri": "[concat(variables('utilityContentRoot'), '/template.network.loadBalanced.switch.json')]"
+          },
+          "mode": "Incremental",
+          "parameters": {
+            "location": {
+              "value": "[variables('resourceLocation')]"
+            },
+            "namingInfix": {
+              "value": "[variables('rootName')]"
+            },
+            "subnets": {
+              "value": [
+                {
+                  "name": "default",
+                  "prefix": "10.0.0.0/24",
+                  "rules": "[concat(variables('defaultSecurityRules'), variables('calculatedSecurityRules'))]"
+                }
+              ]
+            },
+            "exportRules": {
+              "value": []
+            },
+            "contentRoot": {
+              "value": "[variables('utilityContentRoot')]"
+            }
+          }
+        }
+      },
+      {
+        "type": "Microsoft.Resources/deployments",
+        "name": "[variables('vmssTemplateName')]",
+        "apiVersion": "2015-01-01",
+        "properties": {
+          "templateLink": {
+            "contentVersion": "1.0.0.0",
+            "uri": "[concat(variables('utilityContentRoot'), '/template.vmss.commands.json')]"
+          },
+          "mode": "Incremental",
+          "parameters": {
+            "location": {
+              "value": "[variables('resourceLocation')]"
+            },
+            "contentRoot": {
+              "value": "[variables('utilityContentRoot')]"
+            },
+            "vmssName": {
+              "value": "[concat(variables('rootName'), '-n')]"
+            },
+            "vmSku": {
+              "value": "[parameters('vmSku')]"
+            },
+            "image": {
+              "value": "Ubuntu16.04.0-LTS"
+            },
+            "instanceCount": {
+              "value": "[parameters('instanceCount')]"
+            },
+            "username": {
+              "value": "[parameters('username')]"
+            },
+            "sshPublicKey": {
+              "value": "[parameters('sshPublicKey')]"
+            },
+            "commandsJson": {
+              "value": {
+                "Commands": "[concat(variables('initCommands'), variables('commands'))]"
+              }
+            },
+            "networkConfiguration": {
+              "value": {
+                "subnet": {
+                  "id": "[reference(variables('networkTemplateName')).outputs.network.value.subnets[0].id]"
+                },
+                "loadBalancerBackendAddressPools": "[reference(variables('networkTemplateName')).outputs.network.value.backendPools]"
+              }
+            }
+          }
+        },
+        "dependsOn": [
+          "[variables('networkTemplateName')]"
+        ]
+      }
+    ],
+    "outputs": {
+      "ip": {
+        "type": "string",
+        "value": "[reference(variables('networkTemplateName')).outputs.network.value.ip]"
+      }
+    }
+  }
