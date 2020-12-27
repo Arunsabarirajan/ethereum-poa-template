@@ -1,0 +1,340 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "consortiumName": {
+      "type": "string",
+      "maxLength": 10,
+      "metadata": {
+        "description": "A short identifier to distinguish machines in this membership"
+      }
+    },
+    "membersData": {
+      "type": "secureObject",
+      "metadata": {
+        "description": "An array of members to create { name : 'M1', location : 'westus' }. Obejct format { members : [] }"
+      }
+    },
+    "username": {
+      "type": "string",
+      "defaultValue": "azureuser",
+      "metadata": {
+        "description": "Admin username on all VMs."
+      }
+    },
+    "sshPublicKey": {
+      "type": "string",
+      "metadata": {
+        "description": "ssh public key for connecting to VMs."
+      }
+    },
+    "genesisJson": {
+      "type": "secureObject",
+      "metadata": {
+        "description": "A url used to download the JSON which describes the genesis block"
+      }
+    },
+    "minerGenesisJsonOverride": {
+      "type": "secureObject",
+      "defaultValue": { },
+      "metadata": {
+        "description": "A url used to download the JSON which describes the genesis block"
+      }
+    },
+    "gethNetworkId": {
+      "type": "securestring",
+      "metadata": {
+        "description": "A unique id used to ensure only machines on the same network can talk to each other"
+      }
+    },
+    "dashboardSecret": {
+      "type": "securestring",
+      "metadata": {
+        "description": "A unique string to used to ensure only machines with the secret can post to the dashboard"
+      }
+    },
+    "txNodeArguments" : {
+      "type" : "string",
+      "defaultValue": ""
+    },
+    "minerNodeArguments" : {
+      "type" : "string",
+      "defaultValue": ""
+    },
+    "configOms" :{
+      "type" : "secureObject",
+      "defaultValue": {},
+      "metadata" : {
+        "description" : "If this value is defined then an OMS agent will be deployed to the machine. { KEY : \"\", WSID :\"\" }"
+      }
+    },
+    "minerVMSku": {
+      "defaultValue": "Standard_DS2_v2",
+      "type": "string",
+      "allowedValues": [
+        "Standard_DS1_v2",
+        "Standard_DS2_v2",
+        "Standard_DS3_v2",
+        "Standard_DS4_v2",
+        "Standard_DS5_v2",
+        "Standard_DS11_v2",
+        "Standard_DS12_v2",
+        "Standard_DS13_v2",
+        "Standard_DS14_v2",
+        "Standard_DS15_v2",
+        "Standard_GS1",
+        "Standard_GS2",
+        "Standard_GS3",
+        "Standard_GS4",
+        "Standard_GS5",
+		"Standard_D2s_v3"
+      ]
+    },
+    "txnodeVMSku": {
+      "defaultValue": "Standard_DS1_v2",
+      "type": "string"
+    },
+	"dashBoardVMSku": {
+		"defaultValue": "Standard_DS1_v2",
+		"type": "string"
+	},
+    "contentVersion": {
+      "defaultValue": "Release-v4.0.2",
+      "type": "string",
+      "metadata": {
+        "description": "The version of the templates to use. This refers to a git branch. This parameter is ignored if contentRootOverride is provided"
+      }
+    },
+    "contentRootOverride": {
+      "defaultValue": "",
+      "type": "string"
+    },
+    "dashboardDockerImage": {
+      "defaultValue": "ethereumex/eth-stats-dashboard:latest",
+      "type": "string"
+    },
+    "txNodeDockerImage": {
+      "defaultValue": "ethereumex/geth-node:latest-alpine",
+      "type": "string"
+    },
+    "allowPublicRPC": {
+      "defaultValue": "false",
+      "type": "string",
+      "allowedValues": [
+        "true",
+        "false"
+      ],
+      "metadata": {
+        "description": "A flag used to determine if RPC should be enabled for public access"
+      }
+    },
+    "minerNodeDockerImage": {
+      "defaultValue": "ethereumex/geth-node:latest-alpine",
+      "type": "string"
+    },
+    "locationOverride": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Location to deploy resources. By default the template will use the Resource Group location"
+      }
+    },
+	"dashBoardSubnetRange": {
+		"defaultValue": "",
+		"type": "string"
+	},
+	"TransactionNodeSubnetRange": {
+		"defaultValue": "",
+		"type": "string"
+	},
+	"MinerNodeSubnetRange": {
+		"defaultValue": "",
+		"type": "string"
+	},
+	"dashBoardNetworkaddressPrefix": {
+		"defaultValue": "",
+		"type": "string"
+	},
+	"memberNetworkaddressPrefix": {
+		"defaultValue": "",
+		"type": "string"
+	}
+  },
+  "variables": {
+	"contentRootUrl": "[concat('https://raw.githubusercontent.com/Arunsabarirajan/ethereum-arm-templates/', parameters('contentVersion'), '/ethereum-consortium')]",
+    "contentRootUrlModified": "https://raw.githubusercontent.com/Arunsabarirajan/blocktemplate/master",
+    "contentRoots": [
+      "[variables('contentRootUrl')]",
+      "[parameters('contentRootOverride')]"
+    ],
+    "contentRoot": "[variables('contentRoots')[length(take(parameters('contentRootOverride'),1))]]",
+    "resourceLocations": [
+      "[resourceGroup().location]",
+      "[parameters('locationOverride')]"
+    ],
+    "resourceLocation": "[tolower(variables('resourceLocations')[length(take(parameters('locationOverride'),1))])]",
+    "minerJson": [
+      "[parameters('genesisJson')]",
+      "[parameters('minerGenesisJsonOverride')]"
+    ],
+    "minerGenesisJson": "[variables('minerJson')[length(take(skip(string(parameters('minerGenesisJsonOverride')),3),1))]]",
+    "members" : "[parameters('membersData').members]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "Consortium.Dashboard",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(variables('contentRootUrlModified'), '/template.dashboard.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "dashboardName": {
+            "value": "[concat(parameters('consortiumName'), '-Dashboard')]"
+          },
+          "username": {
+            "value": "[parameters('username')]"
+          },
+          "sshPublicKey": {
+            "value": "[parameters('sshPublicKey')]"
+          },
+          "dashboardSecret": {
+            "value": "[parameters('dashboardSecret')]"
+          },
+          "vmSku": {
+            "value": "[parameters('dashBoardVMSku')]"
+          },
+          "locationOverride": {
+            "value": "[variables('resourceLocation')]"
+          },
+          "dockerImage":{
+            "value" :"[parameters('dashboardDockerImage')]"
+          },
+          "contentVersion" :{
+            "value" : "[parameters('contentVersion')]"
+          },
+          "contentRootOverride": {
+            "value": "[variables('contentRoot')]"
+          },
+			"dashBoardSubnetRange": {
+				"value": "[parameters('dashBoardSubnetRange')]"
+			},
+			"dashBoardNetworkaddressPrefix": {
+				"value": "[parameters('dashBoardNetworkaddressPrefix')]"
+			}
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "[concat('Consortium.', parameters('consortiumName'), '-', variables('members')[copyIndex()].name)]",
+      "apiVersion": "2015-01-01",
+      "copy": {
+        "name": "consortiumLoop",
+        "count": "[length(variables('members'))]"
+      },
+      "properties": {
+        "templateLink": {
+          "contentVersion": "1.0.0.0",
+          "uri": "[concat(variables('contentRootUrlModified'), '/template.consortiumMember.json')]"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "consortiumMemberName": {
+            "value": "[concat(parameters('consortiumName'), '-', variables('members')[copyIndex()].name)]"
+          },
+          "username": {
+            "value": "[parameters('username')]"
+          },
+          "sshPublicKey": {
+            "value": "[parameters('sshPublicKey')]"
+          },
+          "txGenesisJson": {
+            "value": "[parameters('genesisJson')]"
+          },
+          "minerGenesisJson": {
+            "value": "[variables('minerGenesisJson')]"
+          },
+          "gethNetworkId": {
+            "value": "[parameters('gethNetworkId')]"
+          },
+          "dashboardSecret": {
+            "value": "[parameters('dashboardSecret')]"
+          },
+          "dashboardIp": {
+            "value": "[reference('Consortium.Dashboard').outputs.ip.value]"
+          },
+          "registrarIp": {
+            "value": "[reference('Consortium.Dashboard').outputs.ip.value]"
+          },
+          "minerAddress": {
+            "value": "[variables('members')[copyIndex()].minerAddress]"
+          },
+          "sealerKey": {
+            "value": "[variables('members')[copyIndex()].sealerKey]"
+          },
+          "minerVMSku": {
+            "value": "[parameters('minerVMSku')]"
+          },
+          "minerCount": {
+            "value": "[variables('members')[copyIndex()].minerCount]"
+          },
+          "txnodeVMSku": {
+            "value": "[parameters('txnodeVMSku')]"
+          },
+          "txnodeCount": {
+            "value": "[variables('members')[copyIndex()].txNodeCount]"
+          },
+          "txNodeDockerImage":{
+            "value" :"[parameters('txNodeDockerImage')]"
+          },
+          "allowPublicRPC" : {
+            "value" : "[parameters('allowPublicRPC')]"
+          },
+          "minerNodeDockerImage":{
+            "value" :"[parameters('minerNodeDockerImage')]"
+          },
+          "locationOverride": {
+            "value": "[variables('members')[copyIndex()].location]"
+          },
+          "contentVersion" :{
+            "value" : "[parameters('contentVersion')]"
+          },
+          "contentRootOverride": {
+            "value": "[variables('contentRoot')]"
+          },
+          "configOms" : { 
+            "value":"[parameters('configOms')]"
+          },
+          "txNodeArguments" : {
+            "value" : "[parameters('txNodeArguments')]"
+          },
+          "minerNodeArguments" : {
+            "value" : "[parameters('minerNodeArguments')]"
+          },
+			"TransactionNodeSubnetRange": {
+				"value": "[parameters('TransactionNodeSubnetRange')]"
+			},
+			"MinerNodeSubnetRange": {
+				"value": "[parameters('MinerNodeSubnetRange')]"
+			},
+			"memberNetworkaddressPrefix": {
+				"value": "[parameters('memberNetworkaddressPrefix')]"
+			}
+        }
+      },
+      "dependsOn": [
+        "Consortium.Dashboard"
+      ]
+    }
+  ],
+  "outputs": {
+    "DashboardIp" : {
+      "type": "string",
+      "value": "[reference('Consortium.Dashboard').outputs.ip.value]"
+    }
+  }
+}

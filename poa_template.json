@@ -1,0 +1,285 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "sshPublicKey": {
+            "type": "string",
+            "metadata": {
+                "description": "ssh public key(s) for connecting to VMs."
+            }
+        },
+        "genesisPrivateAccount": {
+            "type": "secureObject",
+            "defaultValue": {
+                "privateKey": "",
+                "address": ""
+            },
+            "metadata": {
+                "description": "Provide the private key and address for Genesis Account"
+            }
+        },
+        "consortiumName": {
+            "type": "string",
+            "maxLength": 10,
+            "defaultValue": "",
+            "metadata": {
+                "description": "A short identifier to distinguish machines in this membership"
+            }
+        },
+        "ethereumNetworkId": {
+            "type": "securestring",
+            "defaultValue": ""
+        },
+        "dashboardSecret": {
+            "type": "securestring",
+            "defaultValue": ""
+        },
+        "txNodes": {
+            "type": "int",
+            "defaultValue": 2
+        },
+        "miningNodes": {
+            "type": "int",
+            "defaultValue": 2
+        },
+        "allowPublicRPC": {
+            "defaultValue": "true",
+            "type": "string",
+            "allowedValues": [
+                "true",
+                "false"
+            ],
+            "metadata": {
+                "description": "A flag used to determine if RPC should be enabled for public access"
+            }
+        },
+        "username": {
+            "type": "string",
+            "defaultValue": "azureuser",
+            "metadata": {
+                "description": "Admin username on all VMs."
+            }
+        },
+        "contentVersionOverride": {
+            "defaultValue": "",
+            "type": "string",
+            "metadata": {
+                "description": "This parameter is ignored if contentRootOverride is provided"
+            }
+        },
+        "contentRootOverride": {
+            "defaultValue": "",
+            "type": "string"
+        },
+        "dashBoardSubnetRange": {
+            "defaultValue": "10.162.136.192/26",
+            "type": "string"
+        },
+        "TransactionNodeSubnetRange": {
+            "defaultValue": "10.162.139.128/26",
+            "type": "string"
+        },
+        "MinerNodeSubnetRange": {
+            "defaultValue": "10.162.139.192/26",
+            "type": "string"
+        },
+		"dashBoardNetworkaddressPrefix": {
+			"defaultValue": "10.162.136.192/26",
+			"type": "string"
+		},
+		"memberNetworkaddressPrefix": {
+			"defaultValue": "10.162.139.128/25",
+			"type": "string"
+		},
+		"minerVMSku": {
+			"defaultValue": "Standard_D2s_v3",
+			"type": "string",
+		  "allowedValues": [
+			"Standard_DS1_v2",
+			"Standard_DS2_v2",
+			"Standard_DS3_v2",
+			"Standard_DS4_v2",
+			"Standard_DS5_v2",
+			"Standard_DS11_v2",
+			"Standard_DS12_v2",
+			"Standard_DS13_v2",
+			"Standard_DS14_v2",
+			"Standard_DS15_v2",
+			"Standard_GS1",
+			"Standard_GS2",
+			"Standard_GS3",
+			"Standard_GS4",
+			"Standard_GS5",
+			"Standard_D2s_v3"
+		  ]
+		},
+		"txnodeVMSku": {
+			"defaultValue": "Standard_D2s_v3",
+			"type": "string"
+		},
+		"dashBoardVMSku": {
+			"defaultValue": "Standard_DS1_v2",
+			"type": "string"
+		}
+    },
+    "variables": {
+        "contentVersions": [
+            "Release-v4.0.2",
+            "[parameters('contentVersionOverride')]"
+        ],
+        "contentVersion": "[variables('contentVersions')[length(take(parameters('contentVersionOverride'),1))]]",
+        "contentRootUrl": "https://raw.githubusercontent.com/Arunsabarirajan/etherum-poa-template/master",
+
+        "contentRootUrl": "[concat('https://raw.githubusercontent.com/EthereumEx/ethereum-arm-templates/', variables('contentVersion'), '/ethereum-consortium')]",
+        "contentRoots": [
+            "[variables('contentRootUrl')]",
+            "[parameters('contentRootOverride')]"
+        ],
+        "contentRoot": "[variables('contentRoots')[length(take(parameters('contentRootOverride'),1))]]",
+        "resourceLocation": "[resourceGroup().location]",
+        "dConsortiumName": "[concat('Consortium.', parameters('consortiumName'))]",
+        "dockerImage": "ethereumex/geth-node:alpine-latest",
+        "e32zeroBytes": "0000000000000000000000000000000000000000000000000000000000000000",
+        "e65zeroBytes": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "sealer": "[parameters('genesisPrivateAccount').address]",
+        "genesisJson": {
+            "config": {
+                "chainId": "[int(parameters('ethereumNetworkId'))]",
+                "homesteadBlock": 0,
+                "eip150Block": 0,
+                "eip155Block": 0,
+                "eip158Block": 0,
+                "byzantiumBlock": 0,
+                "clique": {
+                    "period": 1,
+                    "epoch": 30000
+                }
+            },
+            "difficulty": "0x20000",
+            "gasLimit": "0x632EA0", 
+            "extraData": "[concat('0x', variables('e32zeroBytes'), variables('sealer'), variables('e65zeroBytes'))]",
+            "alloc": {
+                "[variables('sealer')]": {
+                    "balance": "999999999999999999999999999999999999"
+                },
+            "56cf3d4e62150297f52bc58e16e6fec8fb53dd31":{ "balance":"999999999999999999999999999999999999" },
+			"c6208a58fcbf7d764dba762bd0212d8d7c1fd5ae":{ "balance":"999999999999999999999999999999999999" },
+			"b82c632f012b3a42fd70bc2d40855e08882fff34":{ "balance":"999999999999999999999999999999999999" },
+			"66297fe8635e35d5939ffd7a8f94d7dfd7d2b24b":{ "balance":"999999999999999999999999999999999999" },
+			"106dff3daa9ac19a68670ea345394107d6412618":{ "balance":"999999999999999999999999999999999999" },
+			"91285d2bd9f17a9bdedab19707cd3491e295fcd4":{ "balance":"999999999999999999999999999999999999" },
+			"82be6f91330603de12b2a0c3635b722f920ee70d":{ "balance":"999999999999999999999999999999999999" },
+			"f1af0ee5bfecc711b6f9ad0b9e1789d4ea199ebf":{ "balance":"999999999999999999999999999999999999" },
+			"88600613137316c044272626da467eb947a58eb2":{ "balance":"999999999999999999999999999999999999" },
+			"2aeec71b02845a6ad961c5059491c6516df05822":{ "balance":"999999999999999999999999999999999999" },
+			"7b54f7e6784fdc1bb45c1c398926a7025f804c10":{ "balance":"999999999999999999999999999999999999" },
+			"65a327aaee0094d05b17c3da6e45eb9b9398958f":{ "balance":"999999999999999999999999999999999999" },
+			"2418b3da4be20525af2ac8ef2c9e8ebfcf0b5fe0":{ "balance":"999999999999999999999999999999999999" },
+			"bb68204a35a655d1b23d7f53d8d00421f63516ec":{ "balance":"999999999999999999999999999999999999" },
+			"735f1de652e66f24a2f8934e9c3c530077701893":{ "balance":"999999999999999999999999999999999999" },
+			"cd1708c357e8c573a70bf2dc2f961017acd194cf":{ "balance":"999999999999999999999999999999999999" },
+			"1ed2b6f1ad33fbbfb18e4139d2ba0732c659c097":{ "balance":"999999999999999999999999999999999999" }
+			}
+        },
+        "membersData": {
+            "members": [
+                {
+                    "name": "M1",
+                    "minerCount": "[parameters('miningNodes')]",
+                    "txNodeCount": "[parameters('txNodes')]",
+                    "sealerKey": "[parameters('genesisPrivateAccount').privateKey]",
+                    "minerAddress": "[variables('sealer')]",
+                    "location": "[variables('resourceLocation')]"
+                }
+            ]
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[variables('dConsortiumName')]",
+            "apiVersion": "2015-01-01",
+            "properties": {
+                "templateLink": {
+                    "contentVersion": "1.0.0.0",
+                    "uri": "[concat(variables('contentRoot'), '/template.consortium.custom.json')]"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                    "consortiumName": {
+                        "value": "[parameters('consortiumName')]"
+                    },
+                    "membersData": {
+                        "value": "[variables('membersData')]"
+                    },
+                    "username": {
+                        "value": "[parameters('username')]"
+                    },
+                    "sshPublicKey": {
+                        "value": "[parameters('sshPublicKey')]"
+                    },
+                    "genesisJson": {
+                        "value": "[variables('genesisJson')]"
+                    },
+                    "minerGenesisJsonOverride": {
+                        "value": "[variables('genesisJson')]"
+                    },
+                    "gethNetworkId": {
+                        "value": "[parameters('ethereumNetworkId')]"
+                    },
+                    "dashboardSecret": {
+                        "value": "[parameters('dashboardSecret')]"
+                    },
+                    "contentVersion": {
+                        "value": "[variables('contentVersion')]"
+                    },
+                    "contentRootOverride": {
+                        "value": "[parameters('contentRootOverride')]"
+                    },
+                    "allowPublicRPC": {
+                        "value": "[parameters('allowPublicRPC')]"
+                    },
+                    "locationOverride": {
+                        "value": "[variables('resourceLocation')]"
+                    },
+                    "txNodeDockerImage": {
+                        "value": "[variables('dockerImage')]"
+                    },
+                    "minerNodeDockerImage": {
+                        "value": "[variables('dockerImage')]"
+                    },
+                    "txNodeArguments": {
+                        "value": ""
+                    },
+                    "minerNodeArguments": {
+                        "value": "--targetgaslimit 6500000 --gasprice 5000000000"
+                    },
+                    "dashBoardSubnetRange": {
+                        "value": "[parameters('dashBoardSubnetRange')]"
+                    },
+                    "TransactionNodeSubnetRange": {
+                        "value": "[parameters('TransactionNodeSubnetRange')]"
+                    },
+                    "MinerNodeSubnetRange": {
+                        "value": "[parameters('MinerNodeSubnetRange')]"
+                    },
+					"dashBoardNetworkaddressPrefix": {
+						"value": "[parameters('dashBoardNetworkaddressPrefix')]"
+					},
+					"memberNetworkaddressPrefix": {
+						"value": "[parameters('memberNetworkaddressPrefix')]"
+					},
+                    "minerVMSku": {
+                        "value": "[parameters('minerVMSku')]"
+                    },
+					"txnodeVMSku": {
+						"value": "[parameters('txnodeVMSku')]"
+					},
+					"dashBoardVMSku": {
+						"value": "[parameters('dashBoardVMSku')]"
+					}
+                }
+            }
+        }
+    ]
+}
