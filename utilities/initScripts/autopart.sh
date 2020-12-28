@@ -32,6 +32,7 @@ if [ ${?} -eq 0 ];
 then
     echo "Not adding ${UUID} to fstab again (it's already there!)"
 else
+    cp /etc/fstab /root/
     LINE="UUID=\"${UUID}\"\t${MOUNTPOINT}\text4\tnoatime,nodiratime,nodev,noexec,nosuid\t1 2"
     echo -e "${LINE}" >> /etc/fstab
 fi
