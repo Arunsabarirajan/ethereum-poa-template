@@ -76,7 +76,6 @@
 	}	
   },
   "variables": {
-    "utilityContentVersion" : "master",
     "utilityContentRoot": "[concat('https://raw.githubusercontent.com/Arunsabarirajan/ethereum-poa-template/', parameters('contentVersion'), '/utilities')]",
     "contentRootUrl": "[concat('https://raw.githubusercontent.com/Arunsabarirajan/ethereum-poa-template/', parameters('contentVersion'), '/ethereum-consortium')]",
     "contentRoots": [

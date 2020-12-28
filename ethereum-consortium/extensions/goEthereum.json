@@ -1,0 +1,112 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "commands": {
+      "type": "array",
+      "defaultValue": []
+    },
+    "nsgRules": {
+      "type": "array",
+      "defaultValue": []
+    },
+    "exports": {
+      "type": "array",
+      "defaultValue": []
+    },
+    "ruleSeed": {
+      "type": "int",
+      "defaultValue": 100
+    },
+    "data": {
+      "type": "object",
+      "defaultValue": {
+        "dockerImage": "ethereumex/geth-node:latest-alpine",
+        "arguments": []
+      }
+    },
+    "internalExports": {
+      "type": "array",
+      "defaultValue": []
+    },
+    "contentRoot": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "internalExports": [],
+    "defaultNsgRules": [
+      {
+        "name": "allow-dashboard",
+        "properties": {
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "3000",
+          "sourceAddressPrefix": "*",
+          "destinationAddressPrefix": "Internet",
+          "access": "Allow",
+          "priority": "[add(parameters('ruleSeed'), 1)]",
+          "direction": "Outbound"
+        }
+      },
+      {
+        "name": "allow-registrar",
+        "properties": {
+          "protocol": "Tcp",
+          "sourcePortRange": "*",
+          "destinationPortRange": "3001",
+          "sourceAddressPrefix": "*",
+          "destinationAddressPrefix": "Internet",
+          "access": "Allow",
+          "priority": "[add(parameters('ruleSeed'), 2)]",
+          "direction": "Outbound"
+        }
+      }
+    ],
+    "nsgRules": "[concat(parameters('nsgRules'), variables('defaultNsgRules'))]",
+    "localDocker": "/root/docker-compose.yaml",
+    "dockerFile": "[concat(parameters('contentRoot'), '/goEthereum.compose.yaml')]",
+    "curl": "curl -S -s --connect-timeout 5 --retry 15",
+    "commands": [
+      {
+        "name": "WriteGeth",
+        "command": "mkdir -p /home/${USERNAME}/eth-node && echo ${GENESIS_CONTENT} | base64 -d > /home/${USERNAME}/eth-node/genesis.json"
+      },
+      {
+        "name": "ChownDirectory",
+        "command": "chown -R ${USERNAME} /home/${USERNAME}/eth-node"
+      },
+      {
+        "name": "DownloadCompose",
+        "command": "[concat(variables('curl'), ' -o ', variables('localDocker'), ' ', variables('dockerFile'))]"
+      },
+      {
+        "name": "Remove prior configuration",
+        "command": "[concat('docker-compose -f ', variables('localDocker'), ' down')]",
+        "environment": {
+          "DOCKER_IMAGE": "[parameters('data').dockerImage]"
+        }
+      },
+      {
+        "name": "Deploy configuration",
+        "command": "[concat('docker-compose -f ', variables('localDocker'), ' up -d')]",
+        "environment": {
+          "DOCKER_IMAGE": "[parameters('data').dockerImage]"
+        }
+      }
+    ]
+  },
+  "resources": [],
+  "outputs": {
+    "Result": {
+      "type": "object",
+      "value": {
+        "Commands": "[concat(parameters('commands'), variables('commands'))]",
+        "NsgRules": "[variables('nsgRules')]",
+        "Exports": "[parameters('exports')]",
+        "InternalExports": "[concat(parameters('internalExports'), variables('internalExports'))]",
+        "RuleSeed": "[add(parameters('ruleSeed'), length(variables('defaultNsgRules')))]"
+      }
+    }
+  }
+}

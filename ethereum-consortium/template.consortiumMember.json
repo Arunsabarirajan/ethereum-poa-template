@@ -138,7 +138,7 @@
       "defaultValue": ""
     },
     "contentVersion": {
-      "defaultValue": "Release-v4.0.2",
+      "defaultValue": "master",
       "type": "string",
       "metadata": {
         "description": "The version of the templates to use. This refers to a git branch. This parameter is ignored if contentRootOverride is provided"
@@ -172,10 +172,9 @@
 	}
   },
   "variables": {
-    "utilityContentVersion" : "Release-v2.0.0",
-    "utilityContentRoot": "[concat('https://raw.githubusercontent.com/Arunsabarirajan/arm-template-utilities/', variables('utilityContentVersion'))]",
-    "utilityContentRootUrlModified": "https://raw.githubusercontent.com/Arunsabarirajan/blocktemplate/master",
-	"contentRootUrl": "[concat('https://raw.githubusercontent.com/Arunsabarirajan/ethereum-arm-templates/', parameters('contentVersion'), '/ethereum-consortium')]",
+    "utilityContentRoot": "[concat('https://raw.githubusercontent.com/Arunsabarirajan/ethereum-poa-template/', parameters('contentVersion'), '/utilities')]",
+    "contentRootUrl": "[concat('https://raw.githubusercontent.com/Arunsabarirajan/ethereum-poa-template/', parameters('contentVersion'), '/ethereum-consortium')]",
+    
     "contentRoots": [
       "[variables('contentRootUrl')]",
       "[parameters('contentRootOverride')]"
@@ -303,7 +302,7 @@
       "properties": {
         "templateLink": {
           "contentVersion": "1.0.0.0",
-          "uri": "[concat(variables('utilityContentRootUrlModified'), '/template.network.loadBalanced.switch.json')]"
+          "uri": "[concat(variables('utilityContentRoot'), '/template.network.loadBalanced.switch.json')]"
         },
         "mode": "Incremental",
         "parameters": {
@@ -353,7 +352,7 @@
       "properties": {
         "templateLink": {
           "contentVersion": "1.0.0.0",
-          "uri": "[concat(variables('utilityContentRootUrlModified'), '/template.vmProperties.json')]"
+          "uri": "[concat(variables('utilityContentRoot'), '/template.vmProperties.json')]"
         },
         "mode": "Incremental",
         "parameters": {
@@ -378,7 +377,7 @@
             "value": "[variables('resourceLocation')]"
           },
           "contentRoot": {
-            "value": "[variables('contentRoot')]"
+            "value": "[variables('utilityContentRoot')]"
           },
           "vmssName": {
             "value": "[concat(variables('namingInfix'), '-n-tx')]"
