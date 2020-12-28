@@ -21,7 +21,7 @@ grep filesystem <<< "${OUTPUT}" > /dev/null 2>&1
 if [ ${?} -ne 0 ];
 then
     echo "Creating filesystem on ${PARTITION}."
-    /sbin/mkfs -j -t ext4 ${PARTITION}
+    /sbin/mkfs.ext2 -j -t ext4 ${PARTITION}
 fi
 
 echo "Next mount point appears to be ${MOUNTPOINT}"
