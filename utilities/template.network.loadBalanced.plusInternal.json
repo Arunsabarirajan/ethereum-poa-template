@@ -24,10 +24,6 @@
     },
     "contentRoot": {
       "type": "string"
-    },
-	"networkaddressPrefix": {
-      "type": "string",
-      "defaultValue": ""
     }
   },
   "variables": {
@@ -35,8 +31,7 @@
     "contentRoot": "[parameters('contentRoot')]",
     "namingInfix": "[parameters('namingInfix')]",
     "networkName": "[concat(variables('namingInfix'), '.Network.Template')]",
-    "internalLoadBalancerTemplate": "[concat(variables('namingInfix'), '-ilb-t')]",
-	"utilityContentRootUrlModified": "https://raw.githubusercontent.com/Arunsabarirajan/blocktemplate/master"
+    "internalLoadBalancerTemplate": "[concat(variables('namingInfix'), '-ilb-t')]"
   },
   "resources": [
     {
@@ -46,7 +41,7 @@
       "properties": {
         "templateLink": {
           "contentVersion": "1.0.0.0",
-          "uri": "[concat(variables('utilityContentRootUrlModified'), '/template.network.loadBalanced.json')]"
+          "uri": "[concat(parameters('contentRoot'), '/template.network.loadBalanced.json')]"
         },
         "mode": "Incremental",
         "parameters": {
@@ -64,9 +59,6 @@
           },
           "contentRoot": {
             "value": "[parameters('contentRoot')]"
-          },
-          "networkaddressPrefix": {
-            "value": "[parameters('networkaddressPrefix')]"
           }
         }
       }
