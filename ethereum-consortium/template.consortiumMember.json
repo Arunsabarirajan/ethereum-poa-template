@@ -442,7 +442,7 @@
             "value": "[variables('resourceLocation')]"
           },
           "contentRoot": {
-            "value": "[variables('contentRoot')]"
+            "value": "[variables('utilityContentRoot')]"
           },
           "vmssName": {
             "value": "[concat(variables('namingInfix'), '-n-miner')]"
