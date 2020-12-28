@@ -42,6 +42,7 @@ do
     SKIP=1
   else
      NEWARGS="$NEWARGS $ARG"
+     echo ${NEWARGS} >> $LOG
   fi
 done
 
