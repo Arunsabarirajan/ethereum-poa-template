@@ -114,7 +114,7 @@
       "type": "string"
     },
     "txNodeDockerImage": {
-      "defaultValue": "ethereumex/geth-node:latest-alpine",
+      "defaultValue": "arunsabarirajan/geth-node:latest",
       "type": "string"
     },
     "allowPublicRPC": {
@@ -129,7 +129,7 @@
       }
     },
     "minerNodeDockerImage": {
-      "defaultValue": "ethereumex/geth-node:latest-alpine",
+      "defaultValue": "arunsabarirajan/geth-node:latest",
       "type": "string"
     },
     "locationOverride": {

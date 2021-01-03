@@ -39,7 +39,7 @@
       "type": "secureObject"
     },
     "dockerImage": {
-      "defaultValue": "ethereumex/eth-stats-dashboard:latest",
+      "defaultValue": "arunsabarirajan/eth-stats-dashboard:latest",
       "type": "string",
       "metadata": {
         "description": "The tag of the docker image to download"

@@ -21,7 +21,7 @@
         "data": {
             "type": "object",
             "defaultValue": {
-                "dockerImage": "ethereumex/eth-stats-dashboard:latest"
+                "dockerImage": "arunsabarirajan/eth-stats-dashboard:latest"
             }
         },
         "parentName": {

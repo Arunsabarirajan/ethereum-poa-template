@@ -1,7 +1,7 @@
 version: '3'
 services:
   boot-node:
-    image: ethereumex/bootnode-registrar:node
+    image: arunsabarirajan/bootnode-registrar:latest
     hostname: ${HOST_NAME}-b
     restart: always
     volumes:
