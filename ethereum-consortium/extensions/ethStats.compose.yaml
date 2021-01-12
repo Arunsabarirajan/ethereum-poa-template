@@ -9,7 +9,7 @@ services:
     ports:
       - "3001:3001"
   dashboard:
-    image: ethereumex/eth-netstats:node
+    image: arunsabarirajan/eth-netstats:node
     hostname: ${HOST_NAME}-d
     restart: always
     environment:
