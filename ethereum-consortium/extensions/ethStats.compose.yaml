@@ -1,7 +1,7 @@
 version: '3'
 services:
   boot-node:
-    image: arunsabarirajan/bootnode-registrar:latest
+    image: arunsabarirajan/bootnode-registrar:node
     hostname: ${HOST_NAME}-d
     restart: always
     environment:
