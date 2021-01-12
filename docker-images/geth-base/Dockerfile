@@ -1,6 +1,8 @@
 FROM ethereum/client-go:alltools-stable
 
 # alpine sdk - curl, gcc, make, g++, git
+EXPOSE 30303 30303/udp 8545 8546
+
 RUN apk add --update \
   alpine-sdk \
   bash \
@@ -9,8 +11,8 @@ RUN apk add --update \
   net-tools \
   nodejs \
   nodejs-npm \
+  curl \
   lsof
 
-RUN npm install -g pm2
-
 ENTRYPOINT ["/bin/bash"]
+

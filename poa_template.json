@@ -136,7 +136,7 @@
         "contentRoot": "[variables('contentRoots')[length(take(parameters('contentRootOverride'),1))]]",
         "resourceLocation": "[resourceGroup().location]",
         "dConsortiumName": "[concat('Consortium.', parameters('consortiumName'))]",
-        "dockerImage": "arunsabarirajan/geth-node:latest",
+        "dockerImage": "arunsabarirajan/geth-node:latest-alpine",
         "e32zeroBytes": "0000000000000000000000000000000000000000000000000000000000000000",
         "e65zeroBytes": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
         "sealer": "[parameters('genesisPrivateAccount').address]",

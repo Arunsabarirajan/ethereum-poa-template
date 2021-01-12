@@ -1,24 +1,24 @@
-FROM arunsabarirajan/geth-dev
+FROM ethereum/client-go:alltools-stable
 
-RUN addgroup -g 99 -S eth-node
-RUN adduser  -u 99 -D -S -G eth-node eth-node
+# alpine sdk - curl, gcc, make, g++, git
+EXPOSE 30303 30303/udp 8545 8546
 
-USER eth-node
-RUN pm2 install pm2-logrotate
-RUN pm2 set pm2-logrotate:max_size 100M
-RUN pm2 set pm2-logrotate:compress true
-RUN pm2 set pm2-logrotate:rotateInterval '23 * * *'
+RUN apk add --update \
+  alpine-sdk \
+  bash \
+  vim \
+  python3 \
+  net-tools \
+  nodejs \
+  nodejs-npm \
+  curl \
+  lsof
 
-RUN git clone https://github.com/Arunsabarirajan/bootnode-registrar.git /home/eth-node/lib/bootnode
-WORKDIR /home/eth-node/lib/bootnode
-RUN npm install
+USER root
 
-RUN git clone https://github.com/Arunsabarirajan/eth-net-intelligence-api.git /home/eth-node/lib/ethStatsApi
-WORKDIR /home/eth-node/lib/ethStatsApi
-RUN npm install
-
+RUN mkdir -p /home/eth-node
 WORKDIR /home/eth-node
-ADD app.json /home/eth-node/app.json
+
 ADD runGeth.sh /home/eth-node/runGeth.sh
 
-ENTRYPOINT ["pm2", "start", "--no-daemon", "app.json"]
+ENTRYPOINT ["bash"]
