@@ -21,7 +21,7 @@
     "data": {
       "type": "object",
       "defaultValue": {
-        "dockerImage": "arunsabarirajan/geth-node:latest-alpine",
+        "dockerImage": "arunsabarirajan/geth-node:latest",
         "arguments": []
       }
     },
