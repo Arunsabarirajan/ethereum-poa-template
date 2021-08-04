@@ -72,23 +72,23 @@
             "type": "string"
         },
         "dashBoardSubnetRange": {
-            "defaultValue": "10.162.136.128/26",
+            "defaultValue": "10.142.1.0/28",
             "type": "string"
         },
         "TransactionNodeSubnetRange": {
-            "defaultValue": "10.162.139.0/26",
+            "defaultValue": "10.142.1.32/28",
             "type": "string"
         },
         "MinerNodeSubnetRange": {
-            "defaultValue": "10.162.139.64/26",
+            "defaultValue": "10.142.1.48/28",
             "type": "string"
         },
 		"dashBoardNetworkaddressPrefix": {
-			"defaultValue": "10.162.136.128/26",
+			"defaultValue": "10.142.1.0/28",
 			"type": "string"
 		},
 		"memberNetworkaddressPrefix": {
-			"defaultValue": "10.162.139.0/25",
+			"defaultValue": "10.142.1.32/27",
 			"type": "string"
 		},
 		"minerVMSku": {
@@ -110,17 +110,95 @@
 			"Standard_GS3",
 			"Standard_GS4",
 			"Standard_GS5",
-			"Standard_D2s_v3"
+			"Standard_D2s_v3",
+			"Standard_D4s_v3"
 		  ]
 		},
 		"txnodeVMSku": {
 			"defaultValue": "Standard_D2s_v3",
-			"type": "string"
+			"type": "string",
+		  "allowedValues": [
+			"Standard_DS1_v2",
+			"Standard_DS2_v2",
+			"Standard_DS3_v2",
+			"Standard_DS4_v2",
+			"Standard_DS5_v2",
+			"Standard_DS11_v2",
+			"Standard_DS12_v2",
+			"Standard_DS13_v2",
+			"Standard_DS14_v2",
+			"Standard_DS15_v2",
+			"Standard_GS1",
+			"Standard_GS2",
+			"Standard_GS3",
+			"Standard_GS4",
+			"Standard_GS5",
+			"Standard_D2s_v3",
+			"Standard_D4s_v3"
+		  ]
 		},
 		"dashBoardVMSku": {
-			"defaultValue": "Standard_DS1_v2",
+			"defaultValue": "Standard_D2s_v3",
+			"type": "string",
+		  "allowedValues": [
+			"Standard_DS1_v2",
+			"Standard_DS2_v2",
+			"Standard_DS3_v2",
+			"Standard_DS4_v2",
+			"Standard_DS5_v2",
+			"Standard_DS11_v2",
+			"Standard_DS12_v2",
+			"Standard_DS13_v2",
+			"Standard_DS14_v2",
+			"Standard_DS15_v2",
+			"Standard_GS1",
+			"Standard_GS2",
+			"Standard_GS3",
+			"Standard_GS4",
+			"Standard_GS5",
+			"Standard_D2s_v3",
+			"Standard_D4s_v3"
+		  ]
+		},
+		"dashBoardVMImage": {
+			"defaultValue": "Ubuntu20.04-LTS",
+			"type": "string",
+			"allowedValues": [
+			"Ubuntu18.04-LTS",
+			"Ubuntu20.04-LTS",
+			"Ubuntu16.04.0-LTS"
+		  ]
+		},
+		"minerVMImage": {
+			"defaultValue": "Ubuntu20.04-LTS",
+			"type": "string",
+			"allowedValues": [
+			"Ubuntu18.04-LTS",
+			"Ubuntu20.04-LTS"
+		  ]
+		},
+		"txnodeVMImage": {
+			"defaultValue": "Ubuntu20.04-LTS",
+			"type": "string",
+			"allowedValues": [
+			"Ubuntu18.04-LTS",
+			"Ubuntu20.04-LTS"
+		  ]
+		},
+		"omsworkspaceId": {			
 			"type": "string"
-		}
+		},
+		"omsworkspaceKey": {
+			"type": "string"
+		},
+		"dataDiskSizeGB" : {
+		  "type" : "int",
+		  "defaultValue": 128,
+		  "minValue": 100,
+		  "metadata": {
+			"description" : "One data disk will be added automatically with this size."
+		  }
+		}	
     },
     "variables": {
         "contentVersions": [
@@ -136,7 +214,7 @@
         "contentRoot": "[variables('contentRoots')[length(take(parameters('contentRootOverride'),1))]]",
         "resourceLocation": "[resourceGroup().location]",
         "dConsortiumName": "[concat('Consortium.', parameters('consortiumName'))]",
-        "dockerImage": "arunsabarirajan/geth-node:latest-alpine",
+        "dockerImage": "arunsabarirajan/geth-node:latest",
         "e32zeroBytes": "0000000000000000000000000000000000000000000000000000000000000000",
         "e65zeroBytes": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
         "sealer": "[parameters('genesisPrivateAccount').address]",
@@ -270,12 +348,30 @@
                     "minerVMSku": {
                         "value": "[parameters('minerVMSku')]"
                     },
+					"minerVMImage": {
+                        "value": "[parameters('minerVMImage')]"
+                    },
 					"txnodeVMSku": {
 						"value": "[parameters('txnodeVMSku')]"
 					},
+					"txnodeVMImage": {
+						"value": "[parameters('txnodeVMImage')]"
+					},
 					"dashBoardVMSku": {
 						"value": "[parameters('dashBoardVMSku')]"
-					}
+					},
+					"dashBoardVMImage": {
+						"value": "[parameters('dashBoardVMImage')]"
+					},
+					"omsworkspaceId": {
+						"value": "[parameters('omsworkspaceId')]"
+					},
+					"omsworkspaceKey": {
+						"value": "[parameters('omsworkspaceKey')]"
+					},
+				  "dataDiskSizeGB" : {
+					"value": "[parameters('dataDiskSizeGB')]"
+				  }
                 }
             }
         }

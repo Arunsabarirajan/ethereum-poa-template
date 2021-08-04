@@ -20,7 +20,8 @@
         "Standard_GS3",
         "Standard_GS4",
         "Standard_GS5",
-        "Standard_D2s_v3"
+        "Standard_D2s_v3",
+		"Standard_D4s_v3"
       ]
     }
   },
@@ -89,6 +90,10 @@
       "Standard_D2s_v3": {
         "cores" : 2,
         "ram" : 8
+      },
+      "Standard_D4s_v3": {
+        "cores" : 4,
+        "ram" : 16
       }
     }
   },

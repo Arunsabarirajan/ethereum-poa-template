@@ -9,7 +9,7 @@
       }
     },
     "vmSku": {
-      "defaultValue": "Standard_D1_v2",
+      "defaultValue": "Standard_D2s_v3",
       "type": "string",
       "metadata": {
         "description": "Size of VMs in the VM Scale Set."
@@ -49,8 +49,8 @@
     },
     "dataDiskSizeGB" : {
       "type" : "int",
-      "defaultValue": 100,
-      "minValue": 1,
+      "defaultValue": 128,
+      "minValue": 100,
       "metadata": {
         "description" : "One data disk will be added automatically with this size."
       }
@@ -66,7 +66,13 @@
     },
     "contentRoot": {
       "type": "string"
-    }
+    },
+	"omsworkspaceId": {			
+		"type": "string"
+	},
+	"omsworkspaceKey": {
+		"type": "string"
+	}
   },
   "variables": {
     "resourceLocation": "[parameters('location')]",
@@ -136,7 +142,13 @@
           },
           "dataDiskSizeGB" : {
             "value": "[parameters('dataDiskSizeGB')]"
-          }
+          },
+			"omsworkspaceId": {
+				"value": "[parameters('omsworkspaceId')]"
+			},
+			"omsworkspaceKey": {
+				"value": "[parameters('omsworkspaceKey')]"
+			}
         }
       }
     }

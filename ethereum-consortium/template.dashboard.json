@@ -29,7 +29,11 @@
       }
     },
     "vmSku": {
-      "defaultValue": "Standard_DS1_v2",
+      "defaultValue": "Standard_D2s_v3",
+      "type": "string"
+    },
+	"image": {
+      "defaultValue": "Ubuntu20.04-LTS",
       "type": "string"
     },
     "additionalCommands": {
@@ -73,7 +77,21 @@
 	"dashBoardNetworkaddressPrefix": {
 		"defaultValue": "",
 		"type": "string"
-	}	
+	},
+	"omsworkspaceId": {			
+		"type": "string"
+	},
+	"omsworkspaceKey": {
+		"type": "string"
+	},
+	"dataDiskSizeGB" : {
+	  "type" : "int",
+	  "defaultValue": 128,
+	  "minValue": 100,
+	  "metadata": {
+		"description" : "One data disk will be added automatically with this size."
+	  }
+	}
   },
   "variables": {
     "utilityContentRoot": "[concat('https://raw.githubusercontent.com/Arunsabarirajan/ethereum-poa-template/', parameters('contentVersion'), '/utilities')]",
@@ -218,7 +236,7 @@
             "value": "[parameters('vmSku')]"
           },
           "image": {
-            "value": "Ubuntu16.04.0-LTS"
+            "value": "[parameters('image')]"
           },
           "instanceCount": {
             "value": 1
@@ -241,7 +259,16 @@
               },
               "loadBalancerBackendAddressPools": "[reference(variables('dNetworkName')).outputs.network.value.backendPools]"
             }
-          }
+          },
+			"omsworkspaceId": {
+				"value": "[parameters('omsworkspaceId')]"
+			},
+			"omsworkspaceKey": {
+				"value": "[parameters('omsworkspaceKey')]"
+			},
+			  "dataDiskSizeGB" : {
+				"value": "[parameters('dataDiskSizeGB')]"
+			  }
         }
       },
       "dependsOn": [

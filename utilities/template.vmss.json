@@ -9,13 +9,14 @@
       }
     },
     "vmSku": {
-      "defaultValue": "Standard_D1_v2",
+      "defaultValue": "Standard_D2s_v3",
       "type": "string",
       "metadata": {
         "description": "Size of VMs in the VM Scale Set."
       }
     },
     "image": {
+	  "defaultValue": "Ubuntu20.04-LTS",
       "type": "string",
       "metadata": {
         "description": "The os disk image for the VMs in the scale set."
@@ -36,8 +37,8 @@
     },
     "dataDiskSizeGB" : {
       "type" : "int",
-      "defaultValue": 100,
-      "minValue": 1,
+      "defaultValue": 128,
+      "minValue": 100,
       "metadata": {
         "description" : "One data disk will be added automatically with this size."
       }
@@ -63,7 +64,13 @@
     },
     "scriptCommand": {
       "type": "securestring"
-    }
+    },
+	"omsworkspaceId": {			
+		"type": "string"
+	},
+	"omsworkspaceKey": {
+		"type": "string"
+	}
   },
   "variables": {
     "instanceCount": "[int(parameters('instanceCount'))]",
@@ -72,20 +79,20 @@
     "namingInfix": "[toLower(parameters('vmssName'))]",
     "nicName": "[concat('nic-', variables('namingInfix'))]",
     "ipConfigName": "[concat('ipconfig-', variables('namingInfix'))]",
-    "imageUbuntu14.04.5-LTS": {
-      "sku": "14.04.5-LTS",
-      "publisher": "Canonical",
-      "version": "latest",
-      "offer": "UbuntuServer"
-    },
     "imageUbuntu16.04.0-LTS": {
       "sku": "16.04.0-LTS",
       "publisher": "Canonical",
       "version": "latest",
       "offer": "UbuntuServer"
     },
-    "imageUbuntu14.04.3-LTS": {
-      "sku": "14.04.3-LTS",
+    "imageUbuntu18.04-LTS": {
+      "sku": "18.04-LTS",
+      "publisher": "Canonical",
+      "version": "latest",
+      "offer": "UbuntuServer"
+    },
+	"imageUbuntu20.04-LTS": {
+      "sku": "20.04-LTS",
       "publisher": "Canonical",
       "version": "latest",
       "offer": "UbuntuServer"
@@ -124,7 +131,7 @@
       "properties": {
         "overprovision": false,
         "upgradePolicy": {
-          "mode": "Automatic"
+          "mode": "Manual"
         },
         "virtualMachineProfile": {
           "storageProfile": {
@@ -174,7 +181,22 @@
                     "commandToExecute": "[parameters('scriptCommand')]"
                   }
                 }
-              }
+              },
+              {
+              "name": "[concat(variables('namingInfix'),'OMS')]",
+                "properties": {
+                  "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+                  "type": "OmsAgentForLinux",
+                  "typeHandlerVersion": "1.4",
+                  "autoUpgradeMinorVersion": true,
+                  "settings": {
+                    "workspaceId": "[parameters('omsworkspaceId')]"
+                  },
+                  "protectedSettings": {
+                    "workspaceKey": "[parameters('omsworkspaceKey')]"
+                  }
+                }
+			        }
             ]
           }
         }

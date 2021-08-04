@@ -59,7 +59,21 @@
     },
     "contentRoot": {
       "type": "string"
-    }
+    },
+	"omsworkspaceId": {			
+		"type": "string"
+	},
+	"omsworkspaceKey": {
+		"type": "string"
+	},
+	"dataDiskSizeGB" : {
+	  "type" : "int",
+	  "defaultValue": 128,
+	  "minValue": 100,
+	  "metadata": {
+		"description" : "One data disk will be added automatically with this size."
+	  }
+	}
   },
   "variables": {
     "resourceLocation": "[parameters('location')]",
@@ -114,7 +128,16 @@
           },
           "networkConfiguration": {
             "value": "[parameters('networkConfiguration')]"
-          }
+          },
+			"omsworkspaceId": {
+				"value": "[parameters('omsworkspaceId')]"
+			},
+			"omsworkspaceKey": {
+				"value": "[parameters('omsworkspaceKey')]"
+			},
+		  "dataDiskSizeGB" : {
+			"value": "[parameters('dataDiskSizeGB')]"
+		  }
         }
       }
     }

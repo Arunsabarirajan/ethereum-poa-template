@@ -69,33 +69,27 @@
       }
     },
     "minerVMSku": {
-      "defaultValue": "Standard_DS2_v2",
-      "type": "string",
-      "allowedValues": [
-        "Standard_DS1_v2",
-        "Standard_DS2_v2",
-        "Standard_DS3_v2",
-        "Standard_DS4_v2",
-        "Standard_DS5_v2",
-        "Standard_DS11_v2",
-        "Standard_DS12_v2",
-        "Standard_DS13_v2",
-        "Standard_DS14_v2",
-        "Standard_DS15_v2",
-        "Standard_GS1",
-        "Standard_GS2",
-        "Standard_GS3",
-        "Standard_GS4",
-        "Standard_GS5",
-		"Standard_D2s_v3"
-      ]
+      "defaultValue": "Standard_D2s_v3",
+      "type": "string"
+    },
+	"minerVMImage": {
+      "defaultValue": "Ubuntu20.04-LTS",
+      "type": "string"
     },
     "txnodeVMSku": {
-      "defaultValue": "Standard_DS1_v2",
+      "defaultValue": "Standard_D2s_v3",
+      "type": "string"
+    },
+	"txnodeVMImage": {
+      "defaultValue": "Ubuntu20.04-LTS",
       "type": "string"
     },
 	"dashBoardVMSku": {
-		"defaultValue": "Standard_DS1_v2",
+		"defaultValue": "Standard_D2s_v3",
+		"type": "string"
+	},
+	"dashBoardVMImage": {
+		"defaultValue": "Ubuntu20.04-LTS",
 		"type": "string"
 	},
     "contentVersion": {
@@ -158,6 +152,20 @@
 	"memberNetworkaddressPrefix": {
 		"defaultValue": "",
 		"type": "string"
+	},
+	"omsworkspaceId": {			
+		"type": "string"
+	},
+	"omsworkspaceKey": {
+		"type": "string"
+	},
+	"dataDiskSizeGB" : {
+	  "type" : "int",
+	  "defaultValue": 128,
+	  "minValue": 100,
+	  "metadata": {
+		"description" : "One data disk will be added automatically with this size."
+	  }
 	}
   },
   "variables": {
@@ -206,6 +214,9 @@
           "vmSku": {
             "value": "[parameters('dashBoardVMSku')]"
           },
+          "image": {
+            "value": "[parameters('dashBoardVMImage')]"
+          },
           "locationOverride": {
             "value": "[variables('resourceLocation')]"
           },
@@ -223,7 +234,16 @@
 			},
 			"dashBoardNetworkaddressPrefix": {
 				"value": "[parameters('dashBoardNetworkaddressPrefix')]"
-			}
+			},
+			"omsworkspaceId": {
+				"value": "[parameters('omsworkspaceId')]"
+			},
+			"omsworkspaceKey": {
+				"value": "[parameters('omsworkspaceKey')]"
+			},
+			  "dataDiskSizeGB" : {
+				"value": "[parameters('dataDiskSizeGB')]"
+			  }
         }
       }
     },
@@ -278,11 +298,17 @@
           "minerVMSku": {
             "value": "[parameters('minerVMSku')]"
           },
+		  "minerVMImage": {
+            "value": "[parameters('minerVMImage')]"
+          },		  
           "minerCount": {
             "value": "[variables('members')[copyIndex()].minerCount]"
           },
           "txnodeVMSku": {
             "value": "[parameters('txnodeVMSku')]"
+          },
+		  "txnodeVMImage": {
+            "value": "[parameters('txnodeVMImage')]"
           },
           "txnodeCount": {
             "value": "[variables('members')[copyIndex()].txNodeCount]"
@@ -322,6 +348,12 @@
 			},
 			"memberNetworkaddressPrefix": {
 				"value": "[parameters('memberNetworkaddressPrefix')]"
+			},
+			"omsworkspaceId": {
+				"value": "[parameters('omsworkspaceId')]"
+			},
+			"omsworkspaceKey": {
+				"value": "[parameters('omsworkspaceKey')]"
 			}
         }
       },
