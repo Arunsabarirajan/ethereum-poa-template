@@ -91,11 +91,11 @@
       "version": "latest",
       "offer": "UbuntuServer"
     },
-	"imageUbuntu20.04-LTS": {
-      "sku": "20.04-LTS",
-      "publisher": "Canonical",
+    "imageUbuntu20.04-LTS": {
+      "sku": "20_04-lts-gen2",
+      "publisher": "canonical",
       "version": "latest",
-      "offer": "UbuntuServer"
+      "offer": "0001-com-ubuntu-server-focal"
     },
     "imageReference": "[variables(concat('image', parameters('image')))]",
     "sshKeyPath": "[concat('/home/',parameters('username'),'/.ssh/authorized_keys')]",
