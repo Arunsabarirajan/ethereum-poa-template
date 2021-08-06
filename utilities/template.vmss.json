@@ -86,8 +86,8 @@
       "offer": "UbuntuServer"
     },
     "imageUbuntu18.04-LTS": {
-      "sku": "18.04-LTS",
-      "publisher": "Canonical",
+      "sku": "18_04-lts-gen2",
+      "publisher": "canonical",
       "version": "latest",
       "offer": "UbuntuServer"
     },
