@@ -31,7 +31,7 @@ if [ ! -f $SCRIPT_COMPLETE ]; then
   echo > $SCRIPT_COMPLETE
 fi
 
-apt-get install -y nodejs-legacy npm >> $LOG 2>&1
+apt-get install -y nodejs npm >> $LOG 2>&1
 echo $JSON_PAYLOAD | base64 -d > $SCRIPTS/data.json
 download $ROOT_URL/initScripts/initNode.js $SCRIPTS/initNode.js 
 download $ROOT_URL/initScripts/package.json $SCRIPTS/package.json 
