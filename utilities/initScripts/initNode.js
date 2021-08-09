@@ -61,7 +61,8 @@ function updateEnvironment(item, globalEnv)
 function orchestrateCommands()
 {
     var hostName = ("" + execSync('hostname')).trim();
-    var hostIp = ("" + execSync("ifconfig eth0 2>/dev/null|awk '/inet addr:/ {print $2}'|sed 's/addr://'")).trim();
+    //var hostIp = ("" + execSync("ifconfig eth0 2>/dev/null|awk '/inet addr:/ {print $2}'|sed 's/addr://'")).trim();
+    var hostIp = ("" + execSync("ifconfig eth0 2>/dev/null|grep netmask|awk '/inet/ { print $2}'")).trim();
     
     var globalEnvironment = {
         "HOST_IP" : hostIp,

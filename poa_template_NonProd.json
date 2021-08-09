@@ -165,8 +165,7 @@
 			"type": "string",
 			"allowedValues": [
 			"Ubuntu18.04-LTS",
-			"Ubuntu20.04-LTS",
-			"Ubuntu16.04.0-LTS"
+			"Ubuntu20.04-LTS"
 		  ]
 		},
 		"minerVMImage": {
