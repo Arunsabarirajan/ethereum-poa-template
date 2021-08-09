@@ -48,7 +48,7 @@ done
 ACTIVE_DIR=$(pwd)
 cd $SCRIPTS
 npm install >> $LOG 2>&1
-node initNode.js >> $LOG 2>&1
+#node initNode.js >> $LOG 2>&1
 exit_code=$?
 cd $ACTIVE_DIR
 exit $exit_code
